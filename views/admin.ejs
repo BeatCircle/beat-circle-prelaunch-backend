@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Beat Circle · Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0B0909;
+      --surface:   #151111;
+      --surface2:  #1E1A1A;
+      --border:    #2C2828;
+      --primary:   #E8682A;
+      --primary-d: #C0521E;
+      --text:      #F4F0EF;
+      --muted:     #8A8280;
+      --pending:   #F59E0B;
+      --approved:  #22C55E;
+      --rejected:  #EF4444;
+      --artist:    #A78BFA;
+      --producer:  #60A5FA;
+      --fan:       #34D399;
+      --brand:     #FBBF24;
+      --r:         10px;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ── LOGIN ─────────────────────────────────────────────────────────── */
+    #login-screen {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      background: radial-gradient(ellipse at 60% 40%, #2A1208 0%, var(--bg) 70%);
+    }
+
+    .login-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 48px 40px;
+      width: 100%;
+      max-width: 400px;
+    }
+
+    .login-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 32px;
+    }
+
+    .login-logo .dot {
+      width: 36px; height: 36px;
+      background: var(--primary);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+
+    .login-logo span { font-size: 20px; font-weight: 700; }
+    .login-logo .badge {
+      font-size: 11px; font-weight: 600; color: var(--muted);
+      background: var(--surface2); border: 1px solid var(--border);
+      padding: 2px 8px; border-radius: 20px; margin-left: 4px;
+    }
+
+    .login-card h2 { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+    .login-card p  { color: var(--muted); font-size: 14px; margin-bottom: 28px; }
+
+    .field { margin-bottom: 16px; }
+    .field label { display: block; font-size: 13px; font-weight: 500; color: var(--muted); margin-bottom: 6px; }
+    .field input {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 14px;
+      padding: 10px 14px;
+      outline: none;
+      transition: border-color .15s;
+    }
+    .field input:focus { border-color: var(--primary); }
+
+    .btn-primary {
+      width: 100%;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 600;
+      padding: 11px;
+      cursor: pointer;
+      transition: background .15s, opacity .15s;
+      margin-top: 8px;
+    }
+    .btn-primary:hover   { background: var(--primary-d); }
+    .btn-primary:disabled { opacity: .5; cursor: not-allowed; }
+
+    .login-error {
+      color: var(--rejected);
+      font-size: 13px;
+      margin-top: 12px;
+      text-align: center;
+      min-height: 18px;
+    }
+
+    /* ── SHELL ─────────────────────────────────────────────────────────── */
+    #app { display: none; height: 100vh; overflow: hidden; }
+    #app.visible { display: flex; }
+
+    aside {
+      width: 224px;
+      min-width: 224px;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      padding: 24px 0 16px;
+      overflow-y: auto;
+    }
+
+    .aside-logo {
+      display: flex; align-items: center; gap: 8px;
+      padding: 0 20px 24px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 16px;
+    }
+    .aside-logo .dot { width: 28px; height: 28px; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+    .aside-logo .name { font-size: 15px; font-weight: 700; }
+    .aside-logo .tag  { font-size: 10px; color: var(--muted); background: var(--surface2); border: 1px solid var(--border); padding: 1px 6px; border-radius: 20px; margin-left: 4px; }
+
+    .nav-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 20px;
+      font-size: 14px; font-weight: 500; color: var(--muted);
+      cursor: pointer;
+      border-radius: 0;
+      transition: color .15s, background .15s;
+      border-left: 3px solid transparent;
+      user-select: none;
+    }
+    .nav-item:hover  { color: var(--text); background: var(--surface2); }
+    .nav-item.active { color: var(--primary); border-left-color: var(--primary); background: rgba(232,104,42,.07); }
+
+    .nav-label { font-size: 11px; font-weight: 600; color: var(--muted); padding: 16px 20px 6px; letter-spacing: .06em; text-transform: uppercase; }
+
+    .aside-footer { margin-top: auto; padding: 0 20px; }
+    .btn-logout {
+      width: 100%;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--muted);
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 500;
+      padding: 8px;
+      cursor: pointer;
+      transition: color .15s, border-color .15s;
+    }
+    .btn-logout:hover { color: var(--rejected); border-color: var(--rejected); }
+
+    /* ── MAIN ──────────────────────────────────────────────────────────── */
+    main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 32px 36px;
+      background: var(--bg);
+    }
+
+    .page { display: none; }
+    .page.active { display: block; }
+
+    /* ── PAGE HEADER ───────────────────────────────────────────────────── */
+    .page-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 28px;
+    }
+    .page-header h1 { font-size: 22px; font-weight: 700; }
+    .page-header p  { color: var(--muted); font-size: 14px; margin-top: 2px; }
+
+    /* ── STAT CARDS ────────────────────────────────────────────────────── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+    .stat-card::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0;
+      height: 3px;
+      background: var(--accent, var(--primary));
+      opacity: .6;
+    }
+    .stat-card .label { font-size: 12px; font-weight: 500; color: var(--muted); margin-bottom: 8px; }
+    .stat-card .value { font-size: 32px; font-weight: 700; line-height: 1; }
+    .stat-card .icon  { font-size: 22px; position: absolute; top: 16px; right: 16px; opacity: .3; }
+
+    .stat-card.total  { --accent: var(--primary); }
+    .stat-card.artist { --accent: var(--artist); }
+    .stat-card.producer { --accent: var(--producer); }
+    .stat-card.fan    { --accent: var(--fan); }
+    .stat-card.brand  { --accent: var(--brand); }
+    .stat-card.pending  { --accent: var(--pending); }
+    .stat-card.approved { --accent: var(--approved); }
+    .stat-card.rejected { --accent: var(--rejected); }
+
+    /* ── RECENT TABLE (dashboard) ──────────────────────────────────────── */
+    .section-title {
+      font-size: 15px; font-weight: 600; margin-bottom: 14px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .section-title a {
+      font-size: 12px; color: var(--primary); text-decoration: none;
+      font-weight: 500; margin-left: auto; cursor: pointer;
+    }
+
+    /* ── TABLE ─────────────────────────────────────────────────────────── */
+    .table-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      overflow: hidden;
+    }
+
+    table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+    thead th {
+      padding: 12px 16px;
+      text-align: left;
+      font-size: 11px; font-weight: 600; color: var(--muted);
+      text-transform: uppercase; letter-spacing: .05em;
+      background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    thead th.sortable { cursor: pointer; user-select: none; }
+    thead th.sortable:hover { color: var(--text); }
+
+    tbody tr {
+      border-bottom: 1px solid var(--border);
+      transition: background .1s;
+    }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: var(--surface2); }
+
+    td { padding: 12px 16px; vertical-align: middle; }
+
+    .cell-name { font-weight: 500; }
+    .cell-email { color: var(--muted); font-size: 12px; margin-top: 2px; }
+
+    /* ── PILLS ─────────────────────────────────────────────────────────── */
+    .pill {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 3px 9px; border-radius: 20px;
+      font-size: 11px; font-weight: 600;
+    }
+    .pill-artist   { background: rgba(167,139,250,.15); color: var(--artist); }
+    .pill-producer { background: rgba(96,165,250,.15);  color: var(--producer); }
+    .pill-fan      { background: rgba(52,211,153,.15);  color: var(--fan); }
+    .pill-brand    { background: rgba(251,191,36,.15);  color: var(--brand); }
+    .pill-pending  { background: rgba(245,158,11,.15);  color: var(--pending); }
+    .pill-approved { background: rgba(34,197,94,.15);   color: var(--approved); }
+    .pill-rejected { background: rgba(239,68,68,.15);   color: var(--rejected); }
+
+    /* ── ACTION BUTTONS ────────────────────────────────────────────────── */
+    .actions { display: flex; gap: 6px; align-items: center; }
+    .icon-btn {
+      background: none; border: 1px solid var(--border);
+      border-radius: 6px; color: var(--muted);
+      padding: 5px 8px; font-size: 13px; cursor: pointer;
+      transition: color .12s, border-color .12s, background .12s;
+      font-family: inherit;
+    }
+    .icon-btn:hover               { color: var(--text);     border-color: var(--text); }
+    .icon-btn.approve:hover       { color: var(--approved); border-color: var(--approved); background: rgba(34,197,94,.08); }
+    .icon-btn.reject:hover        { color: var(--rejected); border-color: var(--rejected); background: rgba(239,68,68,.08); }
+    .icon-btn.delete-btn:hover    { color: var(--rejected); border-color: var(--rejected); background: rgba(239,68,68,.08); }
+    .icon-btn.view-btn:hover      { color: var(--primary);  border-color: var(--primary);  background: rgba(232,104,42,.08); }
+
+    /* ── FILTER BAR ────────────────────────────────────────────────────── */
+    .filter-bar {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 16px; flex-wrap: wrap;
+    }
+
+    .search-wrap { position: relative; flex: 1; min-width: 200px; max-width: 340px; }
+    .search-wrap input {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: inherit; font-size: 13.5px;
+      padding: 8px 12px 8px 34px;
+      outline: none;
+      transition: border-color .15s;
+    }
+    .search-wrap input:focus { border-color: var(--primary); }
+    .search-wrap .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 14px; pointer-events: none; }
+
+    select {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: inherit; font-size: 13.5px;
+      padding: 8px 12px;
+      outline: none;
+      cursor: pointer;
+      transition: border-color .15s;
+    }
+    select:focus { border-color: var(--primary); }
+
+    .btn-small {
+      background: var(--primary);
+      color: #fff; border: none;
+      border-radius: 8px;
+      font-family: inherit; font-size: 13px; font-weight: 600;
+      padding: 8px 14px; cursor: pointer;
+      transition: background .15s;
+      white-space: nowrap;
+    }
+    .btn-small:hover { background: var(--primary-d); }
+
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--muted);
+      font-family: inherit; font-size: 13px; font-weight: 500;
+      padding: 8px 14px; cursor: pointer;
+      transition: color .15s, border-color .15s;
+      white-space: nowrap;
+    }
+    .btn-outline:hover { color: var(--text); border-color: var(--text); }
+
+    /* ── PAGINATION ────────────────────────────────────────────────────── */
+    .pagination {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 16px;
+      background: var(--surface2);
+      border-top: 1px solid var(--border);
+      font-size: 13px; color: var(--muted);
+    }
+    .pag-btns { display: flex; gap: 6px; }
+    .pag-btn {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--muted);
+      font-family: inherit; font-size: 13px;
+      padding: 5px 12px; cursor: pointer;
+      transition: color .12s, border-color .12s;
+    }
+    .pag-btn:hover:not(:disabled) { color: var(--text); border-color: var(--text); }
+    .pag-btn:disabled { opacity: .4; cursor: not-allowed; }
+
+    /* ── MODAL ─────────────────────────────────────────────────────────── */
+    .modal-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.7);
+      z-index: 100;
+      align-items: center; justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      width: 100%; max-width: 560px;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 32px;
+    }
+    .modal-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 24px; }
+    .modal-header h3 { font-size: 17px; font-weight: 700; }
+    .close-btn { background: none; border: none; color: var(--muted); font-size: 20px; cursor: pointer; padding: 0; line-height: 1; }
+    .close-btn:hover { color: var(--text); }
+
+    .detail-row { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+    .detail-row:last-of-type { border-bottom: none; }
+    .detail-row .key  { min-width: 120px; font-size: 12px; color: var(--muted); font-weight: 500; padding-top: 1px; }
+    .detail-row .val  { font-size: 14px; word-break: break-all; }
+
+    .notes-area {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: inherit; font-size: 13.5px;
+      padding: 10px 12px; resize: vertical; min-height: 80px;
+      outline: none; transition: border-color .15s;
+      margin-bottom: 16px;
+    }
+    .notes-area:focus { border-color: var(--primary); }
+
+    .modal-footer { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+    .modal-footer .btn-small  { flex: 1; text-align: center; }
+    .modal-footer .btn-outline { flex: 1; text-align: center; }
+
+    /* ── TOAST ─────────────────────────────────────────────────────────── */
+    #toast {
+      position: fixed; bottom: 28px; right: 28px; z-index: 999;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 18px;
+      font-size: 13.5px; font-weight: 500;
+      box-shadow: 0 8px 32px rgba(0,0,0,.5);
+      transform: translateY(20px); opacity: 0;
+      transition: transform .25s, opacity .25s;
+      max-width: 320px;
+    }
+    #toast.show { transform: translateY(0); opacity: 1; }
+    #toast.success { border-left: 3px solid var(--approved); }
+    #toast.error   { border-left: 3px solid var(--rejected); }
+
+    /* ── LOADING ───────────────────────────────────────────────────────── */
+    .spinner {
+      display: inline-block; width: 18px; height: 18px;
+      border: 2px solid var(--border); border-top-color: var(--primary);
+      border-radius: 50%; animation: spin .7s linear infinite;
+      vertical-align: middle; margin-right: 6px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .empty-state { text-align: center; padding: 60px 20px; color: var(--muted); }
+    .empty-state .icon { font-size: 40px; margin-bottom: 12px; }
+    .empty-state p { font-size: 14px; }
+  </style>
+</head>
+<body>
+
+<!-- ═══ LOGIN ═════════════════════════════════════════════════════════════════════ -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="dot">🎵</div>
+      <span>Beat Circle</span>
+      <span class="badge">Admin</span>
+    </div>
+    <h2>Welcome back</h2>
+    <p>Sign in to manage your waitlist.</p>
+    <div class="field">
+      <label>Username</label>
+      <input id="login-username" type="text" placeholder="admin" autocomplete="username" />
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input id="login-password" type="password" placeholder="••••••••" autocomplete="current-password" />
+    </div>
+    <button class="btn-primary" id="login-btn">Sign In</button>
+    <div class="login-error" id="login-error"></div>
+  </div>
+</div>
+
+<!-- ═══ APP SHELL ══════════════════════════════════════════════════════════════════ -->
+<div id="app">
+  <aside>
+    <div class="aside-logo">
+      <div class="dot">🎵</div>
+      <span class="name">Beat Circle</span>
+      <span class="tag">Admin</span>
+    </div>
+
+    <div class="nav-label">Menu</div>
+    <div class="nav-item active" data-page="dashboard">
+      📊 &nbsp;Dashboard
+    </div>
+    <div class="nav-item" data-page="users">
+      👥 &nbsp;Users
+    </div>
+
+    <div class="aside-footer">
+      <button class="btn-logout" id="logout-btn">Sign Out</button>
+    </div>
+  </aside>
+
+  <main>
+    <!-- ── DASHBOARD PAGE ──────────────────────────────────────────── -->
+    <div class="page active" id="page-dashboard">
+      <div class="page-header">
+        <div>
+          <h1>Dashboard</h1>
+          <p>Founding member waitlist overview</p>
+        </div>
+        <button class="btn-small" onclick="App.nav('users')">View All Users →</button>
+      </div>
+
+      <div class="stats-grid" id="stats-grid">
+        <div class="stat-card total">
+          <div class="icon">📋</div>
+          <div class="label">Total Submissions</div>
+          <div class="value" id="s-total">—</div>
+        </div>
+        <div class="stat-card artist">
+          <div class="icon">🎤</div>
+          <div class="label">Artists</div>
+          <div class="value" id="s-artist">—</div>
+        </div>
+        <div class="stat-card producer">
+          <div class="icon">🎛️</div>
+          <div class="label">Producers</div>
+          <div class="value" id="s-producer">—</div>
+        </div>
+        <div class="stat-card fan">
+          <div class="icon">🎧</div>
+          <div class="label">Music Fans</div>
+          <div class="value" id="s-fan">—</div>
+        </div>
+        <div class="stat-card brand">
+          <div class="icon">💼</div>
+          <div class="label">Brands / Investors</div>
+          <div class="value" id="s-brand">—</div>
+        </div>
+        <div class="stat-card pending">
+          <div class="icon">⏳</div>
+          <div class="label">Pending</div>
+          <div class="value" id="s-pending">—</div>
+        </div>
+        <div class="stat-card approved">
+          <div class="icon">✅</div>
+          <div class="label">Approved</div>
+          <div class="value" id="s-approved">—</div>
+        </div>
+        <div class="stat-card rejected">
+          <div class="icon">❌</div>
+          <div class="label">Rejected</div>
+          <div class="value" id="s-rejected">—</div>
+        </div>
+      </div>
+
+      <div class="section-title">
+        Recent Submissions
+        <a onclick="App.nav('users')">See all →</a>
+      </div>
+      <div class="table-wrap" id="recent-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Name / Email</th>
+              <th>Type</th>
+              <th>Country</th>
+              <th>Status</th>
+              <th>Submitted</th>
+            </tr>
+          </thead>
+          <tbody id="recent-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── USERS PAGE ──────────────────────────────────────────────── -->
+    <div class="page" id="page-users">
+      <div class="page-header">
+        <div>
+          <h1>Users</h1>
+          <p id="users-count">Loading…</p>
+        </div>
+        <button class="btn-small" id="export-btn">⬇ Export CSV</button>
+      </div>
+
+      <div class="filter-bar">
+        <div class="search-wrap">
+          <span class="search-icon">🔍</span>
+          <input id="search-input" type="text" placeholder="Search name, email, stage name…" />
+        </div>
+        <select id="filter-type">
+          <option value="">All Types</option>
+          <option value="artist">🎤 Artist</option>
+          <option value="producer">🎛️ Producer</option>
+          <option value="music_fan">🎧 Music Fan</option>
+          <option value="brand_investor">💼 Brand / Investor</option>
+        </select>
+        <select id="filter-status">
+          <option value="">All Statuses</option>
+          <option value="pending">⏳ Pending</option>
+          <option value="approved">✅ Approved</option>
+          <option value="rejected">❌ Rejected</option>
+        </select>
+        <button class="btn-outline" id="reset-filters">Reset</button>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Name / Email</th>
+              <th>Type</th>
+              <th>Stage Name</th>
+              <th>Country</th>
+              <th>Status</th>
+              <th>Submitted</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="users-tbody"></tbody>
+        </table>
+        <div class="pagination">
+          <span id="pag-info">—</span>
+          <div class="pag-btns">
+            <button class="pag-btn" id="pag-prev">← Prev</button>
+            <button class="pag-btn" id="pag-next">Next →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ═══ USER DETAIL MODAL ══════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Applicant Details</h3>
+      <button class="close-btn" onclick="App.closeModal()">✕</button>
+    </div>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<!-- ═══ TOAST ═════════════════════════════════════════════════════════════════════ -->
+<div id="toast"></div>
+
+<script>
+const API = '/api';
+
+const App = (() => {
+  let token  = localStorage.getItem('bc_admin_token');
+  let state  = { page: 1, search: '', userType: '', status: '' };
+  let debounceTimer;
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
+
+  function headers() {
+    return { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
+  }
+
+  async function api(path, opts = {}) {
+    const r = await fetch(API + path, { headers: headers(), ...opts });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(j.message || `HTTP ${r.status}`);
+    return j;
+  }
+
+  function toast(msg, type = 'success') {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className   = `show ${type}`;
+    clearTimeout(el._t);
+    el._t = setTimeout(() => el.classList.remove('show'), 3500);
+  }
+
+  function formatDate(iso) {
+    return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
+  function typePill(t) {
+    const map = {
+      artist:         ['pill-artist',   '🎤 Artist'],
+      producer:       ['pill-producer', '🎛️ Producer'],
+      music_fan:      ['pill-fan',      '🎧 Music Fan'],
+      brand_investor: ['pill-brand',    '💼 Brand/Investor'],
+    };
+    const [cls, label] = map[t] || ['', t];
+    return `<span class="pill ${cls}">${label}</span>`;
+  }
+
+  function statusPill(s) {
+    const map = {
+      pending:  ['pill-pending',  '⏳ Pending'],
+      approved: ['pill-approved', '✅ Approved'],
+      rejected: ['pill-rejected', '❌ Rejected'],
+    };
+    const [cls, label] = map[s] || ['', s];
+    return `<span class="pill ${cls}">${label}</span>`;
+  }
+
+  // ── Auth ──────────────────────────────────────────────────────────────────
+
+  function showLogin() {
+    document.getElementById('login-screen').style.display = 'flex';
+    document.getElementById('app').classList.remove('visible');
+  }
+
+  function showApp() {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').classList.add('visible');
+    loadDashboard();
+  }
+
+  async function doLogin() {
+    const btn      = document.getElementById('login-btn');
+    const errEl    = document.getElementById('login-error');
+    const username = document.getElementById('login-username').value.trim();
+    const password = document.getElementById('login-password').value;
+
+    errEl.textContent = '';
+    if (!username || !password) { errEl.textContent = 'Please enter username and password.'; return; }
+
+    btn.disabled  = true;
+    btn.innerHTML = '<span class="spinner"></span>Signing in…';
+
+    try {
+      const res = await fetch(`${API}/admin/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Login failed');
+      token = data.token;
+      localStorage.setItem('bc_admin_token', token);
+      showApp();
+    } catch (e) {
+      errEl.textContent = e.message;
+    } finally {
+      btn.disabled  = false;
+      btn.textContent = 'Sign In';
+    }
+  }
+
+  function logout() {
+    localStorage.removeItem('bc_admin_token');
+    token = null;
+    showLogin();
+  }
+
+  // ── Navigation ────────────────────────────────────────────────────────────
+
+  function nav(page) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById(`page-${page}`).classList.add('active');
+    document.querySelector(`[data-page="${page}"]`).classList.add('active');
+    if (page === 'dashboard') loadDashboard();
+    if (page === 'users')     loadUsers(1);
+  }
+
+  // ── Dashboard ─────────────────────────────────────────────────────────────
+
+  async function loadDashboard() {
+    try {
+      const { data } = await api('/admin/dashboard');
+      const bt = data.byType   || {};
+      const bs = data.byStatus || {};
+
+      document.getElementById('s-total').textContent    = data.total ?? 0;
+      document.getElementById('s-artist').textContent   = bt.artist          ?? 0;
+      document.getElementById('s-producer').textContent = bt.producer        ?? 0;
+      document.getElementById('s-fan').textContent      = bt.music_fan       ?? 0;
+      document.getElementById('s-brand').textContent    = bt.brand_investor  ?? 0;
+      document.getElementById('s-pending').textContent  = bs.pending         ?? 0;
+      document.getElementById('s-approved').textContent = bs.approved        ?? 0;
+      document.getElementById('s-rejected').textContent = bs.rejected        ?? 0;
+
+      const tbody = document.getElementById('recent-tbody');
+      tbody.innerHTML = '';
+
+      if (!data.recentEntries?.length) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:32px">No submissions yet</td></tr>`;
+        return;
+      }
+
+      data.recentEntries.forEach(u => {
+        tbody.innerHTML += `
+          <tr>
+            <td><div class="cell-name">${esc(u.fullName)}</div><div class="cell-email">${esc(u.email)}</div></td>
+            <td>${typePill(u.userType)}</td>
+            <td>${esc(u.country || '—')}</td>
+            <td>${statusPill(u.status)}</td>
+            <td>${formatDate(u.createdAt)}</td>
+          </tr>`;
+      });
+    } catch (e) {
+      if (e.message.includes('401') || e.message.toLowerCase().includes('unauthorized')) { logout(); }
+      else toast(e.message, 'error');
+    }
+  }
+
+  // ── Users ─────────────────────────────────────────────────────────────────
+
+  async function loadUsers(page = 1) {
+    state.page = page;
+    const params = new URLSearchParams({
+      page,
+      limit: 25,
+      ...(state.search   && { search:   state.search   }),
+      ...(state.userType && { userType: state.userType }),
+      ...(state.status   && { status:   state.status   }),
+    });
+
+    try {
+      const { data, pagination } = await api(`/admin/users?${params}`);
+      renderUsersTable(data);
+
+      const { total, pages } = pagination;
+      document.getElementById('users-count').textContent = `${total} ${total === 1 ? 'entry' : 'entries'}`;
+      document.getElementById('pag-info').textContent    = `Page ${page} of ${pages || 1}`;
+      document.getElementById('pag-prev').disabled       = page <= 1;
+      document.getElementById('pag-next').disabled       = page >= pages;
+    } catch (e) {
+      if (e.message.includes('401') || e.message.toLowerCase().includes('unauthorized')) { logout(); }
+      else toast(e.message, 'error');
+    }
+  }
+
+  function renderUsersTable(users) {
+    const tbody = document.getElementById('users-tbody');
+    tbody.innerHTML = '';
+    if (!users.length) {
+      tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="icon">🔍</div><p>No entries found</p></div></td></tr>`;
+      return;
+    }
+    users.forEach(u => {
+      tbody.innerHTML += `
+        <tr>
+          <td><div class="cell-name">${esc(u.fullName)}</div><div class="cell-email">${esc(u.email)}</div></td>
+          <td>${typePill(u.userType)}</td>
+          <td>${esc(u.stageName || '—')}</td>
+          <td>${esc(u.country)}</td>
+          <td>${statusPill(u.status)}</td>
+          <td>${formatDate(u.createdAt)}</td>
+          <td>
+            <div class="actions">
+              <button class="icon-btn view-btn"    title="View details" onclick='App.openModal("${u._id}")'>👁</button>
+              ${u.status !== 'approved'
+                ? `<button class="icon-btn approve" title="Approve" onclick='App.quickStatus("${u._id}","approved")'>✓</button>`
+                : ''}
+              ${u.status !== 'rejected'
+                ? `<button class="icon-btn reject"  title="Reject"  onclick='App.quickStatus("${u._id}","rejected")'>✗</button>`
+                : ''}
+              <button class="icon-btn delete-btn" title="Delete"  onclick='App.deleteUser("${u._id}")'>🗑</button>
+            </div>
+          </td>
+        </tr>`;
+    });
+  }
+
+  // ── Quick status change ────────────────────────────────────────────────────
+
+  async function quickStatus(id, newStatus) {
+    try {
+      await api(`/admin/users/${id}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status: newStatus }),
+      });
+      toast(`Marked as ${newStatus}`);
+      loadUsers(state.page);
+    } catch (e) {
+      toast(e.message, 'error');
+    }
+  }
+
+  // ── Delete ────────────────────────────────────────────────────────────────
+
+  async function deleteUser(id) {
+    if (!confirm('Delete this entry? This cannot be undone.')) return;
+    try {
+      await api(`/admin/users/${id}`, { method: 'DELETE' });
+      toast('Entry deleted');
+      loadUsers(state.page);
+    } catch (e) {
+      toast(e.message, 'error');
+    }
+  }
+
+  // ── Modal ─────────────────────────────────────────────────────────────────
+
+  async function openModal(id) {
+    const overlay = document.getElementById('modal-overlay');
+    const body    = document.getElementById('modal-body');
+    body.innerHTML = '<div style="text-align:center;padding:40px"><span class="spinner"></span>Loading…</div>';
+    overlay.classList.add('open');
+
+    try {
+      const { data: u } = await api(`/admin/users/${id}`);
+
+      body.innerHTML = `
+        <div class="detail-row"><span class="key">Full Name</span><span class="val">${esc(u.fullName)}</span></div>
+        <div class="detail-row"><span class="key">Email</span><span class="val">${esc(u.email)}</span></div>
+        <div class="detail-row"><span class="key">User Type</span><span class="val">${typePill(u.userType)}</span></div>
+        <div class="detail-row"><span class="key">Country</span><span class="val">${esc(u.country)}</span></div>
+        ${u.stageName    ? `<div class="detail-row"><span class="key">Stage Name</span><span class="val">${esc(u.stageName)}</span></div>` : ''}
+        ${u.primaryGenre ? `<div class="detail-row"><span class="key">Genre</span><span class="val">${esc(u.primaryGenre)}</span></div>` : ''}
+        ${u.musicLink    ? `<div class="detail-row"><span class="key">Music Link</span><span class="val"><a href="${esc(u.musicLink)}" target="_blank" rel="noopener" style="color:var(--primary)">${esc(u.musicLink)}</a></span></div>` : ''}
+        <div class="detail-row"><span class="key">Status</span><span class="val">${statusPill(u.status)}</span></div>
+        <div class="detail-row"><span class="key">Submitted</span><span class="val">${formatDate(u.createdAt)}</span></div>
+
+        <div style="margin-top:20px">
+          <div style="font-size:13px;font-weight:600;color:var(--muted);margin-bottom:8px">Update Status</div>
+          <select id="modal-status" style="margin-bottom:12px;width:100%">
+            <option value="pending"  ${u.status==='pending'  ?'selected':''}>⏳ Pending</option>
+            <option value="approved" ${u.status==='approved' ?'selected':''}>✅ Approved</option>
+            <option value="rejected" ${u.status==='rejected' ?'selected':''}>❌ Rejected</option>
+          </select>
+          <div style="font-size:13px;font-weight:600;color:var(--muted);margin-bottom:6px">Admin Notes</div>
+          <textarea class="notes-area" id="modal-notes" placeholder="Internal notes (not shown to applicant)…">${esc(u.adminNotes || '')}</textarea>
+          <div class="modal-footer">
+            <button class="btn-small"  onclick='App.saveModal("${u._id}")'>Save Changes</button>
+            <button class="btn-outline" onclick="App.closeModal()">Close</button>
+          </div>
+        </div>`;
+    } catch (e) {
+      body.innerHTML = `<p style="color:var(--rejected)">${e.message}</p>`;
+    }
+  }
+
+  async function saveModal(id) {
+    const status     = document.getElementById('modal-status').value;
+    const adminNotes = document.getElementById('modal-notes').value;
+    try {
+      await api(`/admin/users/${id}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status, adminNotes }),
+      });
+      toast('Changes saved');
+      closeModal();
+      if (document.getElementById('page-users').classList.contains('active')) loadUsers(state.page);
+      if (document.getElementById('page-dashboard').classList.contains('active')) loadDashboard();
+    } catch (e) {
+      toast(e.message, 'error');
+    }
+  }
+
+  function closeModal() {
+    document.getElementById('modal-overlay').classList.remove('open');
+  }
+
+  // ── Export CSV ────────────────────────────────────────────────────────────
+
+  function exportCSV() {
+    const params = new URLSearchParams({
+      ...(state.userType && { userType: state.userType }),
+      ...(state.status   && { status:   state.status   }),
+    });
+    const url = `${API}/admin/users/export?${params}`;
+    const a   = document.createElement('a');
+    a.href        = url;
+    a.download    = '';
+    // Attach token via query param trick (simple approach for file download)
+    // We re-fetch with fetch and create blob
+    fetch(url, { headers: headers() })
+      .then(r => r.blob())
+      .then(blob => {
+        a.href = URL.createObjectURL(blob);
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      })
+      .catch(e => toast(e.message, 'error'));
+  }
+
+  // ── XSS escape ────────────────────────────────────────────────────────────
+
+  function esc(str) {
+    return String(str ?? '')
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // ── Init ──────────────────────────────────────────────────────────────────
+
+  function init() {
+    // Login
+    document.getElementById('login-btn').addEventListener('click', doLogin);
+    document.getElementById('login-password').addEventListener('keydown', e => {
+      if (e.key === 'Enter') doLogin();
+    });
+    document.getElementById('logout-btn').addEventListener('click', logout);
+
+    // Nav
+    document.querySelectorAll('.nav-item').forEach(el => {
+      el.addEventListener('click', () => nav(el.dataset.page));
+    });
+
+    // Users filters
+    document.getElementById('search-input').addEventListener('input', e => {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => { state.search = e.target.value.trim(); loadUsers(1); }, 400);
+    });
+    document.getElementById('filter-type').addEventListener('change', e => { state.userType = e.target.value; loadUsers(1); });
+    document.getElementById('filter-status').addEventListener('change', e => { state.status = e.target.value; loadUsers(1); });
+    document.getElementById('reset-filters').addEventListener('click', () => {
+      state = { ...state, search: '', userType: '', status: '', page: 1 };
+      document.getElementById('search-input').value  = '';
+      document.getElementById('filter-type').value   = '';
+      document.getElementById('filter-status').value = '';
+      loadUsers(1);
+    });
+
+    // Pagination
+    document.getElementById('pag-prev').addEventListener('click', () => loadUsers(state.page - 1));
+    document.getElementById('pag-next').addEventListener('click', () => loadUsers(state.page + 1));
+
+    // Export
+    document.getElementById('export-btn').addEventListener('click', exportCSV);
+
+    // Close modal on overlay click
+    document.getElementById('modal-overlay').addEventListener('click', e => {
+      if (e.target === e.currentTarget) closeModal();
+    });
+
+    // Auto-login if token exists
+    if (token) showApp();
+    else        showLogin();
+  }
+
+  return { init, nav, openModal, saveModal, closeModal, quickStatus, deleteUser };
+})();
+
+document.addEventListener('DOMContentLoaded', App.init);
+</script>
+</body>
+</html>

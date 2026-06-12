@@ -1,0 +1,26 @@
+{
+  "name": "beat-circle-prelaunch-backend",
+  "version": "1.0.0",
+  "description": "Beat Circle prelaunch backend – waitlist & admin panel",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start":        "node index.js",
+    "dev":          "nodemon index.js",
+    "create-admin": "node src/scripts/createAdmin.js"
+  },
+  "keywords": ["music", "song", "artist"],
+  "author": "Victor Jheart",
+  "license": "ISC",
+  "dependencies": {
+    "cors":         "^2.8.6",
+    "dotenv":       "^17.4.2",
+    "ejs":          "^3.1.10",
+    "express":      "^5.2.1",
+    "helmet":       "^8.2.0",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose":     "^9.7.0",
+    "morgan":       "^1.11.0",
+    "nodemon":      "^3.1.14"
+  }
+}
