@@ -9,8 +9,17 @@ import { fileURLToPath } from 'url';
 import connectDB      from './src/config/db.js';
 import waitlistRoutes from './src/routes/waitlist.routes.js';
 import adminRoutes    from './src/routes/admin.routes.js';
+import { createRequire } from 'module';
+import swaggerOptions from './src/config/swagger.js';
+
+
 
 dotenv.config();
+// CJS packages loaded via require — keeps all require() calls in one place
+const require      = createRequire(import.meta.url);
+const swaggerUi    = require('swagger-ui-express');
+const swaggerJSDoc = require('swagger-jsdoc');
+const swaggerSpec  = swaggerJSDoc(swaggerOptions);
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = path.dirname(__filename);
@@ -33,6 +42,34 @@ app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
+
+// ─── Swagger UI ───────────────────────────────────────────────────────────────
+app.use(
+  '/api/docs',
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerSpec, {
+    customSiteTitle:  'Beat Circle API Docs',
+    customCss: `
+      .swagger-ui .topbar { background-color: #0B0909; }
+      .swagger-ui .topbar-wrapper img { display: none; }
+      .swagger-ui .topbar-wrapper::before {
+        content: '🎵 Beat Circle API';
+        color: #E8682A;
+        font-size: 18px;
+        font-weight: 700;
+      }
+    `,
+    swaggerOptions: {
+      persistAuthorization: true,   // keeps the JWT between page reloads
+      displayRequestDuration: true, // shows response time in ms
+      docExpansion: 'list',         // show endpoints collapsed by default
+      filter: true,                 // enable search/filter bar
+    },
+  })
+);
+
+// Raw OpenAPI JSON spec (useful for Postman import)
+app.get('/api/docs.json', (_, res) => res.json(swaggerSpec));
 
 // Smoke test — hit this first to confirm the server is reachable
 app.get('/', (_, res) =>
