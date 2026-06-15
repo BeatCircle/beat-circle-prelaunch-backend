@@ -8,7 +8,7 @@ import {
   toggleFeatured,
   deleteFeedback,
   rateLimiter,
-} from '../controllers/feedback.controller.js';
+} from '../controllers/Feedback.controller.js';
 import { protect } from '../middleware/auth.middleware.js';
 
 const router = express.Router();
