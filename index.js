@@ -9,6 +9,7 @@ import { fileURLToPath } from 'url';
 import connectDB      from './src/config/db.js';
 import waitlistRoutes from './src/routes/waitlist.routes.js';
 import adminRoutes    from './src/routes/admin.routes.js';
+import feedbackRoutes from './src/routes/feedback.routes.js';
 import { createRequire } from 'module';
 import swaggerOptions from './src/config/swagger.js';
 
@@ -92,6 +93,7 @@ app.get('/admin', (_, res) => res.render('admin'));
 // API
 app.use('/api/waitlist', waitlistRoutes);
 app.use('/api/admin',    adminRoutes);
+app.use('/api/feedback', feedbackRoutes);
 
 // ─── 404 ──────────────────────────────────────────────────────────────────────
 app.use((req, res) =>

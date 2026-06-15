@@ -498,6 +498,9 @@
     <div class="nav-item" data-page="users">
       👥 &nbsp;Users
     </div>
+    <div class="nav-item" data-page="feedback">
+      💬 &nbsp;Feedback
+    </div>
 
     <div class="aside-footer">
       <button class="btn-logout" id="logout-btn">Sign Out</button>
@@ -633,6 +636,60 @@
         </div>
       </div>
     </div>
+
+    <!-- ── FEEDBACK PAGE ──────────────────────────────────────────── -->
+    <div class="page" id="page-feedback">
+      <div class="page-header">
+        <div>
+          <h1>Feedback</h1>
+          <p id="feedback-count">Loading…</p>
+        </div>
+      </div>
+
+      <div class="filter-bar">
+        <div class="search-wrap">
+          <span class="search-icon">🔍</span>
+          <input id="fb-search" type="text" placeholder="Search name, role, country…" />
+        </div>
+        <select id="fb-filter-status">
+          <option value="">All Statuses</option>
+          <option value="pending">⏳ Pending</option>
+          <option value="approved">✅ Approved</option>
+          <option value="rejected">❌ Rejected</option>
+        </select>
+        <select id="fb-filter-featured">
+          <option value="">All</option>
+          <option value="true">⭐ Featured</option>
+          <option value="false">Not Featured</option>
+        </select>
+        <button class="btn-outline" id="fb-reset">Reset</button>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Name / Role</th>
+              <th>Country</th>
+              <th>Feedback</th>
+              <th>Status</th>
+              <th>Featured</th>
+              <th>Date</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="feedback-tbody"></tbody>
+        </table>
+        <div class="pagination">
+          <span id="fb-pag-info">—</span>
+          <div class="pag-btns">
+            <button class="pag-btn" id="fb-pag-prev">← Prev</button>
+            <button class="pag-btn" id="fb-pag-next">Next →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </main>
 </div>
 
@@ -644,6 +701,18 @@
       <button class="close-btn" onclick="App.closeModal()">✕</button>
     </div>
     <div id="modal-body"></div>
+  </div>
+</div>
+
+
+<!-- ═══ FEEDBACK DETAIL MODAL ══════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="fb-modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Feedback Detail</h3>
+      <button class="close-btn" onclick="App.closeFbModal()">✕</button>
+    </div>
+    <div id="fb-modal-body"></div>
   </div>
 </div>
 
@@ -763,6 +832,7 @@ const App = (() => {
     document.querySelector(`[data-page="${page}"]`).classList.add('active');
     if (page === 'dashboard') loadDashboard();
     if (page === 'users')     loadUsers(1);
+    if (page === 'feedback')  loadFeedback(1);
   }
 
   // ── Dashboard ─────────────────────────────────────────────────────────────
@@ -1029,12 +1099,179 @@ const App = (() => {
       if (e.target === e.currentTarget) closeModal();
     });
 
+    initFeedbackListeners();
+
     // Auto-login if token exists
     if (token) showApp();
     else        showLogin();
   }
 
-  return { init, nav, openModal, saveModal, closeModal, quickStatus, deleteUser };
+
+  // ── Feedback state ────────────────────────────────────────────────────────
+  let fbState = { page: 1, search: '', status: '', featured: '' };
+  let fbDebounce;
+
+  async function loadFeedback(page = 1) {
+    fbState.page = page;
+    const params = new URLSearchParams({
+      page, limit: 25,
+      ...(fbState.search   && { search:   fbState.search }),
+      ...(fbState.status   && { status:   fbState.status }),
+      ...(fbState.featured !== '' && { featured: fbState.featured }),
+    });
+
+    try {
+      const { data, pagination } = await api(`/feedback/admin?${params}`);
+      renderFeedbackTable(data);
+      document.getElementById('feedback-count').textContent = `${pagination.total} ${pagination.total === 1 ? 'entry' : 'entries'}`;
+      document.getElementById('fb-pag-info').textContent = `Page ${page} of ${pagination.pages || 1}`;
+      document.getElementById('fb-pag-prev').disabled = page <= 1;
+      document.getElementById('fb-pag-next').disabled = page >= pagination.pages;
+    } catch (e) {
+      if (e.message.includes('401') || e.message.toLowerCase().includes('unauthorized')) logout();
+      else toast(e.message, 'error');
+    }
+  }
+
+  function renderFeedbackTable(items) {
+    const tbody = document.getElementById('feedback-tbody');
+    tbody.innerHTML = '';
+    if (!items.length) {
+      tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="icon">💬</div><p>No feedback found</p></div></td></tr>`;
+      return;
+    }
+    items.forEach(f => {
+      const preview = esc(f.feedback.length > 80 ? f.feedback.slice(0, 80) + '…' : f.feedback);
+      const featuredBadge = f.featured
+        ? '<span class="pill pill-approved">⭐ Featured</span>'
+        : '<span style="color:var(--muted);font-size:12px">—</span>';
+
+      tbody.innerHTML += `
+        <tr>
+          <td><div class="cell-name">${esc(f.name)}</div><div class="cell-email">${esc(f.role)}</div></td>
+          <td>${esc(f.country)}</td>
+          <td style="max-width:260px;font-size:13px;color:var(--muted)">${preview}</td>
+          <td>${statusPill(f.status)}</td>
+          <td>${featuredBadge}</td>
+          <td>${formatDate(f.createdAt)}</td>
+          <td>
+            <div class="actions">
+              <button class="icon-btn view-btn"   title="View"    onclick='App.openFbModal("${f._id}")'>👁</button>
+              ${f.status !== 'approved'
+                ? `<button class="icon-btn approve" title="Approve" onclick='App.quickFbStatus("${f._id}","approved")'>✓</button>`
+                : ''}
+              ${f.status !== 'rejected'
+                ? `<button class="icon-btn reject"  title="Reject"  onclick='App.quickFbStatus("${f._id}","rejected")'>✗</button>`
+                : ''}
+              ${f.status === 'approved'
+                ? `<button class="icon-btn" title="${f.featured ? 'Unfeature' : 'Feature'}" onclick='App.toggleFeature("${f._id}")'>${f.featured ? '★' : '☆'}</button>`
+                : ''}
+              <button class="icon-btn delete-btn" title="Delete"  onclick='App.deleteFb("${f._id}")'>🗑</button>
+            </div>
+          </td>
+        </tr>`;
+    });
+  }
+
+  async function quickFbStatus(id, newStatus) {
+    try {
+      await api(`/feedback/admin/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status: newStatus }) });
+      toast(`Marked as ${newStatus}`);
+      loadFeedback(fbState.page);
+    } catch (e) { toast(e.message, 'error'); }
+  }
+
+  async function toggleFeature(id) {
+    try {
+      const { message } = await api(`/feedback/admin/${id}/feature`, { method: 'PATCH' });
+      toast(message);
+      loadFeedback(fbState.page);
+    } catch (e) { toast(e.message, 'error'); }
+  }
+
+  async function deleteFb(id) {
+    if (!confirm('Delete this feedback? This cannot be undone.')) return;
+    try {
+      await api(`/feedback/admin/${id}`, { method: 'DELETE' });
+      toast('Feedback deleted');
+      loadFeedback(fbState.page);
+    } catch (e) { toast(e.message, 'error'); }
+  }
+
+  async function openFbModal(id) {
+    const overlay = document.getElementById('fb-modal-overlay');
+    const body    = document.getElementById('fb-modal-body');
+    body.innerHTML = '<div style="text-align:center;padding:40px"><span class="spinner"></span>Loading…</div>';
+    overlay.classList.add('open');
+
+    try {
+      const { data: f } = await api(`/feedback/admin/${id}`);
+      body.innerHTML = `
+        <div class="detail-row"><span class="key">Name</span><span class="val">${esc(f.name)}</span></div>
+        <div class="detail-row"><span class="key">Role</span><span class="val">${esc(f.role)}</span></div>
+        <div class="detail-row"><span class="key">Country</span><span class="val">${esc(f.country)}</span></div>
+        <div class="detail-row"><span class="key">Status</span><span class="val">${statusPill(f.status)}</span></div>
+        <div class="detail-row"><span class="key">Featured</span><span class="val">${f.featured ? '<span class="pill pill-approved">⭐ Yes</span>' : 'No'}</span></div>
+        <div class="detail-row"><span class="key">Submitted</span><span class="val">${formatDate(f.createdAt)}</span></div>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:16px;margin:16px 0;font-size:14px;line-height:1.7;color:var(--text)">${esc(f.feedback)}</div>
+
+        <div style="font-size:13px;font-weight:600;color:var(--muted);margin-bottom:6px">Update Status</div>
+        <select id="fb-modal-status" style="margin-bottom:12px;width:100%">
+          <option value="pending"  ${f.status==='pending'  ?'selected':''}>⏳ Pending</option>
+          <option value="approved" ${f.status==='approved' ?'selected':''}>✅ Approved</option>
+          <option value="rejected" ${f.status==='rejected' ?'selected':''}>❌ Rejected</option>
+        </select>
+        <div style="font-size:13px;font-weight:600;color:var(--muted);margin-bottom:6px">Admin Notes</div>
+        <textarea class="notes-area" id="fb-modal-notes" placeholder="Internal notes…">${esc(f.adminNotes || '')}</textarea>
+        <div class="modal-footer">
+          <button class="btn-small"  onclick='App.saveFbModal("${f._id}")'>Save Changes</button>
+          ${f.status === 'approved'
+            ? `<button class="btn-outline" onclick='App.toggleFeature("${f._id}");App.closeFbModal()'>${f.featured ? '★ Unfeature' : '☆ Feature'}</button>`
+            : ''}
+          <button class="btn-outline" onclick="App.closeFbModal()">Close</button>
+        </div>`;
+    } catch (e) {
+      body.innerHTML = `<p style="color:var(--rejected)">${e.message}</p>`;
+    }
+  }
+
+  async function saveFbModal(id) {
+    const status     = document.getElementById('fb-modal-status').value;
+    const adminNotes = document.getElementById('fb-modal-notes').value;
+    try {
+      await api(`/feedback/admin/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status, adminNotes }) });
+      toast('Changes saved');
+      closeFbModal();
+      if (document.getElementById('page-feedback').classList.contains('active')) loadFeedback(fbState.page);
+    } catch (e) { toast(e.message, 'error'); }
+  }
+
+  function closeFbModal() {
+    document.getElementById('fb-modal-overlay').classList.remove('open');
+  }
+
+  function initFeedbackListeners() {
+    document.getElementById('fb-search').addEventListener('input', e => {
+      clearTimeout(fbDebounce);
+      fbDebounce = setTimeout(() => { fbState.search = e.target.value.trim(); loadFeedback(1); }, 400);
+    });
+    document.getElementById('fb-filter-status').addEventListener('change', e => { fbState.status = e.target.value; loadFeedback(1); });
+    document.getElementById('fb-filter-featured').addEventListener('change', e => { fbState.featured = e.target.value; loadFeedback(1); });
+    document.getElementById('fb-reset').addEventListener('click', () => {
+      fbState = { page: 1, search: '', status: '', featured: '' };
+      document.getElementById('fb-search').value = '';
+      document.getElementById('fb-filter-status').value = '';
+      document.getElementById('fb-filter-featured').value = '';
+      loadFeedback(1);
+    });
+    document.getElementById('fb-pag-prev').addEventListener('click', () => loadFeedback(fbState.page - 1));
+    document.getElementById('fb-pag-next').addEventListener('click', () => loadFeedback(fbState.page + 1));
+    document.getElementById('fb-modal-overlay').addEventListener('click', e => {
+      if (e.target === e.currentTarget) closeFbModal();
+    });
+  }
+
+  return { init, nav, openModal, saveModal, closeModal, quickStatus, deleteUser, openFbModal, saveFbModal, closeFbModal, quickFbStatus, toggleFeature, deleteFb };
 })();
 
 document.addEventListener('DOMContentLoaded', App.init);

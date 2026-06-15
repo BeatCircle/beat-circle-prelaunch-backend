@@ -62,6 +62,8 @@ Tokens expire after **24 hours**.
       { name: 'Admin – Auth',      description: 'Admin login and token management' },
       { name: 'Admin – Dashboard', description: 'Aggregated stats and recent activity' },
       { name: 'Admin – Users',     description: 'Full CRUD management of waitlist entries' },
+      { name: 'Feedback – Public', description: 'Public endpoints for submitting and viewing reviews' },
+      { name: 'Feedback – Admin',  description: 'Moderate, approve, feature, and delete feedback' },
     ],
     components: {
       securitySchemes: {
@@ -152,6 +154,47 @@ Tokens expire after **24 hours**.
             pages: { type: 'integer', example: 6 },
           },
         },
+
+        FeedbackSubmit: {
+          type: 'object',
+          required: ['name', 'role', 'country', 'feedback'],
+          properties: {
+            name:     { type: 'string', maxLength: 120, example: 'Tunde Okafor' },
+            role:     { type: 'string', maxLength: 100, example: 'Independent Artist' },
+            country:  { type: 'string', example: 'Nigeria' },
+            feedback: { type: 'string', maxLength: 2000, example: 'Beat Circle is exactly what the African music scene has been missing!' },
+          },
+        },
+
+        FeedbackEntry: {
+          type: 'object',
+          properties: {
+            _id:        { type: 'string',  example: '665f1a2b3c4d5e6f7a8b9c0d' },
+            name:       { type: 'string',  example: 'Tunde Okafor' },
+            role:       { type: 'string',  example: 'Independent Artist' },
+            country:    { type: 'string',  example: 'Nigeria' },
+            feedback:   { type: 'string',  example: 'Beat Circle is exactly what the African music scene has been missing!' },
+            status:     { type: 'string',  enum: ['pending','approved','rejected'], example: 'pending' },
+            featured:   { type: 'boolean', example: false },
+            adminNotes: { type: 'string',  example: '' },
+            createdAt:  { type: 'string',  format: 'date-time' },
+            updatedAt:  { type: 'string',  format: 'date-time' },
+          },
+        },
+
+        PublicReview: {
+          type: 'object',
+          description: 'A featured, approved feedback entry — safe for public display.',
+          properties: {
+            _id:      { type: 'string',  example: '665f1a2b3c4d5e6f7a8b9c0d' },
+            name:     { type: 'string',  example: 'Tunde Okafor' },
+            role:     { type: 'string',  example: 'Independent Artist' },
+            country:  { type: 'string',  example: 'Nigeria' },
+            feedback: { type: 'string',  example: 'Beat Circle is exactly what the African music scene has been missing!' },
+            createdAt:{ type: 'string',  format: 'date-time' },
+          },
+        },
+
         SuccessMessage: {
           type: 'object',
           properties: {
@@ -190,6 +233,7 @@ Tokens expire after **24 hours**.
   apis: [
     path.join(__dirname, '../routes/waitlist.routes.js'),
     path.join(__dirname, '../routes/admin.routes.js'),
+    path.join(__dirname, '../routes/feedback.routes.js'),
   ],
 };
 
