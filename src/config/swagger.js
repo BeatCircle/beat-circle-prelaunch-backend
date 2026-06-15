@@ -233,7 +233,7 @@ Tokens expire after **24 hours**.
   apis: [
     path.join(__dirname, '../routes/waitlist.routes.js'),
     path.join(__dirname, '../routes/admin.routes.js'),
-    path.join(__dirname, '../routes/feedback.routes.js'),
+    path.join(__dirname, '../routes/Feedback.routes.js'),
   ],
 };
 
