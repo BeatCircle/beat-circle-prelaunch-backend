@@ -1,4 +1,4 @@
-import Feedback from '../models/feedback.model.js';
+import Feedback from '../models/Feedback.model.js';
 
 // ─── Simple rate limiter (3 submissions / IP / hour) ──────────────────────────
 const ipLog   = new Map();
