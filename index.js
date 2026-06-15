@@ -9,7 +9,7 @@ import { fileURLToPath } from 'url';
 import connectDB      from './src/config/db.js';
 import waitlistRoutes from './src/routes/waitlist.routes.js';
 import adminRoutes    from './src/routes/admin.routes.js';
-import feedbackRoutes from './src/routes/feedback.routes.js';
+import feedbackRoutes from './src/routes/Feedback.routes.js';
 import { createRequire } from 'module';
 import swaggerOptions from './src/config/swagger.js';
 
